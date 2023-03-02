@@ -1,8 +1,7 @@
 package tr.unvercanunlu.postservice.repository;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -14,7 +13,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@TestInstance(value = TestInstance.Lifecycle.PER_CLASS)
 class PostRepositoryTest {
 
     @Autowired
@@ -23,13 +21,13 @@ class PostRepositoryTest {
     @Autowired
     private IPostRepository postRepository;
 
-    @BeforeAll
-    void beforeAll() {
-        this.postRepository.deleteAll();
+    @AfterEach
+    void tearDown() {
+        this.entityManager.flush();
     }
 
     @Test
-    void whenCheckPostExistsById_whenPostExists_thenReturnTrue() {
+    void givenPostId_whenPostDoesExists_whenCheckPostExistsById_thenReturnTrue() {
         Post post = Post.builder()
                 .author("author")
                 .content("content")
@@ -46,7 +44,7 @@ class PostRepositoryTest {
     }
 
     @Test
-    void whenCheckPostExistsById_whenPostExists_thenReturnFalse() {
+    void givenPostId_whenPostDoesNotExist_whenCheckPostExistsById_thenReturnFalse() {
         UUID postId = UUID.randomUUID();
 
         Boolean postExists = this.postRepository.checkExistsById(postId);

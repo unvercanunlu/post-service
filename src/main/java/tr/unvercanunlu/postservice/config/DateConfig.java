@@ -10,4 +10,7 @@ public class DateConfig {
 
     public static final String ZONED_DATE_TIME_FORMAT = DATE_TIME_FORMAT + "Z";
 
+    private DateConfig() {
+    }
+
 }

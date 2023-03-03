@@ -1,5 +1,7 @@
 package tr.unvercanunlu.postservice.config;
 
+import java.time.format.DateTimeFormatter;
+
 public class DateConfig {
 
     public static final String DATE_FORMAT = "yyyy-MM-dd";
@@ -8,7 +10,7 @@ public class DateConfig {
 
     public static final String DATE_TIME_FORMAT = DATE_FORMAT + "'T'" + TIME_FORMAT;
 
-    public static final String ZONED_DATE_TIME_FORMAT = DATE_TIME_FORMAT + "Z";
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
 
     private DateConfig() {
     }

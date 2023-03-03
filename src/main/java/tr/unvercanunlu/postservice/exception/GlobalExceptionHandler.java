@@ -16,18 +16,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = PostNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handlePostNotFoundException(PostNotFoundException exception) {
         Map<String, Object> errorMap = new HashMap<>();
-
         errorMap.put("reason", exception.getMessage());
 
-        Map<String, String> dataMap = new HashMap<>();
-
-        if (Optional.ofNullable(exception.getPostId()).isPresent()) {
-            dataMap.put("postId", exception.getPostId().toString());
-        }
-
-        if (dataMap.size() > 0) {
+        Optional.ofNullable(exception.getPostId()).ifPresent(postId -> {
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("postId", postId.toString());
             errorMap.put("data", dataMap);
-        }
+        });
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)

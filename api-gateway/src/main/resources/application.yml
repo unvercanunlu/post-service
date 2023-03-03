@@ -1,0 +1,14 @@
+# Core
+server:
+  port: 3500
+spring:
+  application:
+    name: api-gateway
+
+# Service Discovery
+eureka:
+  instance:
+    instance-id: api-gateway
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

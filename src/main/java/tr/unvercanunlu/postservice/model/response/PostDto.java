@@ -7,7 +7,7 @@ import lombok.Setter;
 import tr.unvercanunlu.postservice.config.DateConfig;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -21,9 +21,9 @@ public class PostDto implements Serializable {
 
     private String content;
 
-    private Integer viewCount;
+    private Long viewCount;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateConfig.ZONED_DATE_TIME_FORMAT)
-    private ZonedDateTime postDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateConfig.DATE_TIME_FORMAT)
+    private LocalDateTime postDate;
 
 }

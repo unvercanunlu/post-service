@@ -1,13 +1,13 @@
 package tr.unvercanunlu.postservice.model.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 import tr.unvercanunlu.postservice.config.DateConfig;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,9 +18,9 @@ public class PostRequest implements Serializable {
 
     private String content;
 
-    private Integer viewCount;
+    private Long viewCount;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateConfig.ZONED_DATE_TIME_FORMAT)
-    private ZonedDateTime postDate;
+    @DateTimeFormat(pattern = DateConfig.DATE_TIME_FORMAT)
+    private LocalDateTime postDate;
 
 }

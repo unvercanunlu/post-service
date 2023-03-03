@@ -9,6 +9,7 @@ import tr.unvercanunlu.postservice.model.response.PostDto;
 import tr.unvercanunlu.postservice.repository.IPostRepository;
 import tr.unvercanunlu.postservice.service.IPostService;
 
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public class PostService implements IPostService {
                     .id(post.getId())
                     .author(post.getAuthor())
                     .content(post.getContent())
-                    .postDate(post.getPostDate())
+                    .postDate(post.getPostDate().toLocalDateTime())
                     .viewCount(post.getViewCount())
                     .build();
 
@@ -31,14 +32,14 @@ public class PostService implements IPostService {
             Post.builder()
                     .author(postRequest.getAuthor())
                     .content(postRequest.getContent())
-                    .postDate(postRequest.getPostDate())
+                    .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
                     .viewCount(postRequest.getViewCount())
                     .build();
 
     private final BiFunction<Post, PostRequest, Post> postWithPostRequestToPostUpdater = (post, postRequest) -> {
         post.setContent(postRequest.getContent());
         post.setAuthor(postRequest.getAuthor());
-        post.setPostDate(postRequest.getPostDate());
+        post.setPostDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()));
         post.setViewCount(post.getViewCount());
         return post;
     };

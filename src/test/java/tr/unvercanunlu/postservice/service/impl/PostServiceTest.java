@@ -12,6 +12,8 @@ import tr.unvercanunlu.postservice.model.request.PostRequest;
 import tr.unvercanunlu.postservice.model.response.PostDto;
 import tr.unvercanunlu.postservice.repository.IPostRepository;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -35,21 +37,21 @@ class PostServiceTest {
                 .id(UUID.randomUUID())
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
+                .viewCount(1L)
                 .postDate(ZonedDateTime.now())
                 .build();
 
         List<Post> posts = List.of(post);
 
-        PostDto expectedPostDto = PostDto.builder()
+        PostDto postDto = PostDto.builder()
                 .id(post.getId())
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate())
+                .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
-        List<PostDto> expectedPostDtos = List.of(expectedPostDto);
+        List<PostDto> expectedPostDtos = List.of(postDto);
 
         when(this.postRepository.findAll()).thenReturn(posts);
 
@@ -60,24 +62,22 @@ class PostServiceTest {
         assertNotNull(actualPostDtos);
         assertEquals(expectedPostDtos.size(), actualPostDtos.size());
 
-        PostDto actualPostDto = actualPostDtos.get(0);
+        assertNotNull(actualPostDtos.get(0));
 
-        assertNotNull(actualPostDto);
+        assertNotNull(actualPostDtos.get(0).getId());
+        assertEquals(postDto.getId(), actualPostDtos.get(0).getId());
 
-        assertNotNull(actualPostDto.getId());
-        assertEquals(expectedPostDto.getId(), actualPostDto.getId());
+        assertNotNull(actualPostDtos.get(0).getContent());
+        assertEquals(postDto.getContent(), actualPostDtos.get(0).getContent());
 
-        assertNotNull(actualPostDto.getContent());
-        assertEquals(expectedPostDto.getContent(), actualPostDto.getContent());
+        assertNotNull(actualPostDtos.get(0).getAuthor());
+        assertEquals(postDto.getAuthor(), actualPostDtos.get(0).getAuthor());
 
-        assertNotNull(actualPostDto.getAuthor());
-        assertEquals(expectedPostDto.getAuthor(), actualPostDto.getAuthor());
+        assertNotNull(actualPostDtos.get(0).getPostDate());
+        assertEquals(postDto.getPostDate(), actualPostDtos.get(0).getPostDate());
 
-        assertNotNull(actualPostDto.getPostDate());
-        assertEquals(expectedPostDto.getPostDate(), actualPostDto.getPostDate());
-
-        assertNotNull(actualPostDto.getViewCount());
-        assertEquals(expectedPostDto.getViewCount(), actualPostDto.getViewCount());
+        assertNotNull(actualPostDtos.get(0).getViewCount());
+        assertEquals(postDto.getViewCount(), actualPostDtos.get(0).getViewCount());
     }
 
     @Test
@@ -86,7 +86,7 @@ class PostServiceTest {
                 .id(UUID.randomUUID())
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
+                .viewCount(1L)
                 .postDate(ZonedDateTime.now())
                 .build();
 
@@ -95,7 +95,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate())
+                .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
         when(this.postRepository.findById(post.getId())).thenReturn(Optional.of(post));
@@ -151,7 +151,7 @@ class PostServiceTest {
                 .id(UUID.randomUUID())
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
+                .viewCount(1L)
                 .postDate(ZonedDateTime.now())
                 .build();
 
@@ -192,15 +192,15 @@ class PostServiceTest {
         PostRequest postRequest = PostRequest.builder()
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
-                .postDate(ZonedDateTime.now())
+                .viewCount(1L)
+                .postDate(LocalDateTime.now())
                 .build();
 
         Post post = Post.builder()
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
-                .postDate(postRequest.getPostDate())
+                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
                 .build();
 
         UUID postId = UUID.randomUUID();
@@ -210,7 +210,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate())
+                .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
@@ -244,33 +244,31 @@ class PostServiceTest {
         PostRequest postRequest = PostRequest.builder()
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
-                .postDate(ZonedDateTime.now())
+                .viewCount(1L)
+                .postDate(LocalDateTime.now())
                 .build();
 
-        UUID postId = UUID.randomUUID();
-
         Post post = Post.builder()
-                .id(postId)
+                .id(UUID.randomUUID())
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
-                .postDate(postRequest.getPostDate())
+                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
                 .build();
 
         PostDto expectedPostDto = PostDto.builder()
-                .id(postId)
+                .id(post.getId())
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate())
+                .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
 
-        when(this.postRepository.findById(postId)).thenReturn(Optional.of(post));
+        when(this.postRepository.findById(post.getId())).thenReturn(Optional.of(post));
 
-        PostDto actualPostDto = this.postService.updatePost(postId, postRequest);
+        PostDto actualPostDto = this.postService.updatePost(post.getId(), postRequest);
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
 
@@ -281,7 +279,7 @@ class PostServiceTest {
         verify(this.postRepository, times(1)).findById(idCaptor.capture());
 
         assertNotNull(idCaptor.getValue());
-        assertEquals(postId, idCaptor.getValue());
+        assertEquals(post.getId(), idCaptor.getValue());
 
         assertNotNull(postCaptor.getValue());
 
@@ -306,8 +304,8 @@ class PostServiceTest {
         PostRequest postRequest = PostRequest.builder()
                 .author("author-1")
                 .content("content-1")
-                .viewCount(1)
-                .postDate(ZonedDateTime.now())
+                .viewCount(1L)
+                .postDate(LocalDateTime.now())
                 .build();
 
         UUID postId = UUID.randomUUID();
@@ -327,5 +325,4 @@ class PostServiceTest {
             assertEquals(idCaptor.getValue(), postId);
         }
     }
-
 }

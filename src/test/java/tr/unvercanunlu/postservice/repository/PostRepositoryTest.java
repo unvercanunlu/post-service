@@ -31,7 +31,7 @@ class PostRepositoryTest {
         Post post = Post.builder()
                 .author("author")
                 .content("content")
-                .viewCount(1)
+                .viewCount(1L)
                 .postDate(ZonedDateTime.now())
                 .build();
 

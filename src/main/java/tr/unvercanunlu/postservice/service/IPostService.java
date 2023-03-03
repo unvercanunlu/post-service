@@ -17,5 +17,4 @@ public interface IPostService {
     PostDto createPost(PostRequest postRequest);
 
     PostDto updatePost(UUID postId, PostRequest postRequest);
-
 }

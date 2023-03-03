@@ -16,5 +16,4 @@ public class PostNotFoundException extends RuntimeException implements Serializa
         super("Post not found with " + postId.toString() + " ID");
         this.postId = postId;
     }
-
 }

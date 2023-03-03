@@ -15,5 +15,4 @@ public interface IPostRepository extends JpaRepository<Post, UUID> {
             "from Post post " +
             "where post.id = :postId")
     Boolean checkExistsById(UUID postId);
-
 }

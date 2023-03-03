@@ -3,6 +3,7 @@ package tr.unvercanunlu.postservice.model.request;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.format.annotation.DateTimeFormat;
 import tr.unvercanunlu.postservice.config.DateConfig;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
+@ToString
 public class PostRequest implements Serializable {
 
     private String author;
@@ -22,5 +24,4 @@ public class PostRequest implements Serializable {
 
     @DateTimeFormat(pattern = DateConfig.DATE_TIME_FORMAT)
     private LocalDateTime postDate;
-
 }

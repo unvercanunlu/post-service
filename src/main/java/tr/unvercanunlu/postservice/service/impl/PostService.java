@@ -1,5 +1,7 @@
 package tr.unvercanunlu.postservice.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.unvercanunlu.postservice.exception.PostNotFoundException;
@@ -18,6 +20,8 @@ import java.util.function.Function;
 
 @Service
 public class PostService implements IPostService {
+
+    private final Logger logger = LoggerFactory.getLogger(PostService.class);
 
     private final Function<Post, PostDto> postToPostDtoMapper = post ->
             PostDto.builder()
@@ -54,26 +58,34 @@ public class PostService implements IPostService {
     @Transactional(readOnly = true)
     public List<PostDto> getAllPosts() {
         List<Post> posts = this.postRepository.findAll();
-        return posts.stream()
-                .map(this.postToPostDtoMapper)
-                .sorted(Comparator.nullsLast(Comparator.comparing(PostDto::getPostDate).reversed()))
-                .toList();
+        logger.info(posts + " are obtained from database.");
+        List<PostDto> postDtos = posts.stream().map(this.postToPostDtoMapper).toList();
+        logger.info(posts + " are mapped to " + postDtos);
+        postDtos = postDtos.stream().sorted(Comparator.nullsLast(Comparator.comparing(PostDto::getPostDate).reversed())).toList();
+        logger.info(postDtos + " are sorted by post date.");
+        return postDtos;
     }
 
     @Override
     @Transactional(readOnly = true)
     public PostDto getPost(UUID postId) {
         Post post = this.postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
-        return this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is obtained from database.");
+        PostDto postDto = this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is mapped to " + postDto);
+        return postDto;
     }
 
     @Override
     @Transactional
     public void deletePost(UUID postId) {
         boolean postExists = this.postRepository.checkExistsById(postId);
+        logger.info("Post with " + postId + " ID is checked whether post exists in database or not.");
         if (postExists) {
             this.postRepository.deleteById(postId);
+            logger.info("Post with " + postId + " ID is deleted from database.");
         } else {
+            logger.info("Post with " + postId + " ID does not exist in database.");
             throw new PostNotFoundException(postId);
         }
     }
@@ -82,17 +94,25 @@ public class PostService implements IPostService {
     @Transactional
     public PostDto createPost(PostRequest postRequest) {
         Post post = this.postRequestToPostMapper.apply(postRequest);
+        logger.info(postRequest + " is mapped to " + post);
         this.postRepository.save(post);
-        return this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is created in database.");
+        PostDto postDto = this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is mapped to " + postDto);
+        return postDto;
     }
 
     @Override
     @Transactional
     public PostDto updatePost(UUID postId, PostRequest postRequest) {
         Post post = this.postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
+        logger.info(post + " is obtained from database.");
         post = this.postWithPostRequestToPostUpdater.apply(post, postRequest);
+        logger.info(post + " is updated to " + post + " with " + postRequest);
         this.postRepository.save(post);
-        return this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is updated in database.");
+        PostDto postDto = this.postToPostDtoMapper.apply(post);
+        logger.info(post + " is mapped to " + postDto);
+        return postDto;
     }
-
 }

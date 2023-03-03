@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import tr.unvercanunlu.postservice.config.DateConfig;
 
 import java.io.Serializable;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
+@ToString
 public class PostDto implements Serializable {
 
     private UUID id;
@@ -25,5 +27,4 @@ public class PostDto implements Serializable {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DateConfig.DATE_TIME_FORMAT)
     private LocalDateTime postDate;
-
 }

@@ -14,5 +14,4 @@ public class DateConfig {
 
     private DateConfig() {
     }
-
 }

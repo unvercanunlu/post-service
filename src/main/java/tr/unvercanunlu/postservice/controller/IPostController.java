@@ -18,5 +18,4 @@ public interface IPostController {
     ResponseEntity<PostDto> createPost(PostRequest postRequest);
 
     ResponseEntity<PostDto> updatePost(UUID postId, PostRequest postRequest);
-
 }

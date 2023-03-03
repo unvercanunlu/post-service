@@ -3,6 +3,12 @@ server.port: 0
 spring:
   application.name: post-service
 
+  # Kafka
+  kafka:
+    topic: change
+    group-id: post
+    bootstrap-servers: localhost:9092
+
   # Datasource
   datasource:
     url: jdbc:h2:mem:post-db

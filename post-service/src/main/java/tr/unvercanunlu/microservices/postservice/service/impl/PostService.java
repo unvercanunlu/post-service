@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
+import tr.unvercanunlu.microservices.postservice.model.constant.Action;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
+import tr.unvercanunlu.microservices.postservice.producer.IKafkaProducer;
 import tr.unvercanunlu.microservices.postservice.repository.IPostRepository;
 import tr.unvercanunlu.microservices.postservice.service.IPostService;
 
@@ -50,8 +52,11 @@ public class PostService implements IPostService {
 
     private final IPostRepository postRepository;
 
-    public PostService(IPostRepository postRepository) {
+    private final IKafkaProducer kafkaProducer;
+
+    public PostService(IPostRepository postRepository, IKafkaProducer kafkaProducer) {
         this.postRepository = postRepository;
+        this.kafkaProducer = kafkaProducer;
     }
 
     @Override
@@ -82,8 +87,10 @@ public class PostService implements IPostService {
         boolean postExists = this.postRepository.checkExistsById(postId);
         logger.info("Post with " + postId + " ID is checked whether post exists in database or not.");
         if (postExists) {
+            Post post = this.postRepository.findById(postId).get();
             this.postRepository.deleteById(postId);
             logger.info("Post with " + postId + " ID is deleted from database.");
+            this.kafkaProducer.send(Action.DELETE, post);
         } else {
             logger.info("Post with " + postId + " ID does not exist in database.");
             throw new PostNotFoundException(postId);
@@ -97,6 +104,7 @@ public class PostService implements IPostService {
         logger.info(postRequest + " is mapped to " + post);
         this.postRepository.save(post);
         logger.info(post + " is created in database.");
+        this.kafkaProducer.send(Action.UPSERT, post);
         PostDto postDto = this.postToPostDtoMapper.apply(post);
         logger.info(post + " is mapped to " + postDto);
         return postDto;
@@ -111,6 +119,7 @@ public class PostService implements IPostService {
         logger.info(post + " is updated to " + post + " with " + postRequest);
         this.postRepository.save(post);
         logger.info(post + " is updated in database.");
+        this.kafkaProducer.send(Action.UPSERT, post);
         PostDto postDto = this.postToPostDtoMapper.apply(post);
         logger.info(post + " is mapped to " + postDto);
         return postDto;

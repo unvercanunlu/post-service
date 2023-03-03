@@ -13,6 +13,7 @@ public class PostNotFoundException extends RuntimeException implements Serializa
     private final UUID postId;
 
     public PostNotFoundException(UUID postId) {
+        super("Post not found with " + postId.toString() + " ID");
         this.postId = postId;
     }
 

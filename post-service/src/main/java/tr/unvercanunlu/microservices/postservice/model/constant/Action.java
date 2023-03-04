@@ -1,13 +1,15 @@
 package tr.unvercanunlu.microservices.postservice.model.constant;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.io.Serializable;
 
+@ToString
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public enum Action implements Serializable {
 
     DELETE("delete", "Delete Post"),

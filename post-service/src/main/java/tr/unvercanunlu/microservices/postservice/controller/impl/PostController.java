@@ -30,48 +30,50 @@ public class PostController implements IPostController {
     @Override
     @GetMapping
     public ResponseEntity<List<PostDto>> getAllPosts() {
-        logger.info("get request is received.");
+        this.logger.info("Get request is received.");
+
         List<PostDto> postDtos = this.postService.getAllPosts();
-        return ResponseEntity.status(HttpStatus.OK.value())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(postDtos);
+
+        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDtos);
     }
 
     @Override
     @GetMapping(path = "/{postId}")
     public ResponseEntity<PostDto> getPost(@PathVariable(name = "postId") UUID postId) {
-        logger.info("get request with " + postId + " ID is received.");
+        this.logger.info("Get request with " + postId + " ID is received.");
+
         PostDto postDto = this.postService.getPost(postId);
-        return ResponseEntity.status(HttpStatus.OK.value())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(postDto);
+
+        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
     }
 
     @Override
     @DeleteMapping(path = "/{postId}")
     public ResponseEntity<Void> deletePost(@PathVariable(name = "postId") UUID postId) {
-        logger.info("delete request with " + postId + " ID is received.");
+        this.logger.info("Delete request with " + postId + " ID is received.");
+
         this.postService.deletePost(postId);
+
         return ResponseEntity.status(HttpStatus.OK.value()).build();
     }
 
     @Override
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostDto> createPost(@RequestBody PostRequest postRequest) {
-        logger.info("post request with " + postRequest + " is received.");
+        this.logger.info("Post request with " + postRequest + " is received.");
+
         PostDto postDto = this.postService.createPost(postRequest);
-        return ResponseEntity.status(HttpStatus.CREATED.value())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(postDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
     }
 
     @Override
     @PutMapping(path = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostDto> updatePost(@PathVariable(name = "postId") UUID postId, @RequestBody PostRequest postRequest) {
-        logger.info("put request with " + postRequest + " and " + postId + " ID is received.");
+        this.logger.info("Put request with " + postRequest + " and " + postId + " ID is received.");
+
         PostDto postDto = this.postService.updatePost(postId, postRequest);
-        return ResponseEntity.status(HttpStatus.OK.value())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(postDto);
+
+        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
     }
 }

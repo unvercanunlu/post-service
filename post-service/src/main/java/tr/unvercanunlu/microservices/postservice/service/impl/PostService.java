@@ -5,11 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
-import tr.unvercanunlu.microservices.postservice.model.constant.Action;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
-import tr.unvercanunlu.microservices.postservice.producer.IKafkaProducer;
+import tr.unvercanunlu.microservices.postservice.producer.IMessageProducer;
 import tr.unvercanunlu.microservices.postservice.repository.IPostRepository;
 import tr.unvercanunlu.microservices.postservice.service.IPostService;
 
@@ -52,9 +51,9 @@ public class PostService implements IPostService {
 
     private final IPostRepository postRepository;
 
-    private final IKafkaProducer kafkaProducer;
+    private final IMessageProducer kafkaProducer;
 
-    public PostService(IPostRepository postRepository, IKafkaProducer kafkaProducer) {
+    public PostService(IPostRepository postRepository, IMessageProducer kafkaProducer) {
         this.postRepository = postRepository;
         this.kafkaProducer = kafkaProducer;
     }
@@ -63,11 +62,14 @@ public class PostService implements IPostService {
     @Transactional(readOnly = true)
     public List<PostDto> getAllPosts() {
         List<Post> posts = this.postRepository.findAll();
-        logger.info(posts + " are obtained from database.");
+        this.logger.info(posts + " are obtained from database.");
+
         List<PostDto> postDtos = posts.stream().map(this.postToPostDtoMapper).toList();
-        logger.info(posts + " are mapped to " + postDtos);
+        this.logger.info(posts + " are mapped to " + postDtos + " .");
+
         postDtos = postDtos.stream().sorted(Comparator.nullsLast(Comparator.comparing(PostDto::getPostDate).reversed())).toList();
-        logger.info(postDtos + " are sorted by post date.");
+        this.logger.info(postDtos + " are sorted by post date.");
+
         return postDtos;
     }
 
@@ -75,9 +77,11 @@ public class PostService implements IPostService {
     @Transactional(readOnly = true)
     public PostDto getPost(UUID postId) {
         Post post = this.postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
-        logger.info(post + " is obtained from database.");
+        this.logger.info(post + " is obtained from database.");
+
         PostDto postDto = this.postToPostDtoMapper.apply(post);
-        logger.info(post + " is mapped to " + postDto);
+        this.logger.info(post + " is mapped to " + postDto + " .");
+
         return postDto;
     }
 
@@ -85,14 +89,15 @@ public class PostService implements IPostService {
     @Transactional
     public void deletePost(UUID postId) {
         boolean postExists = this.postRepository.checkExistsById(postId);
-        logger.info("Post with " + postId + " ID is checked whether post exists in database or not.");
+        this.logger.info("Post with " + postId + " ID is checked whether post exists in database or not.");
+
         if (postExists) {
-            Post post = this.postRepository.findById(postId).get();
             this.postRepository.deleteById(postId);
-            logger.info("Post with " + postId + " ID is deleted from database.");
-            this.kafkaProducer.send(Action.DELETE, post);
+            this.logger.info("Post with " + postId + " ID is deleted from database.");
+            this.kafkaProducer.sendForDelete(postId);
+
         } else {
-            logger.info("Post with " + postId + " ID does not exist in database.");
+            this.logger.info("Post with " + postId + " ID does not exist in database.");
             throw new PostNotFoundException(postId);
         }
     }
@@ -101,12 +106,16 @@ public class PostService implements IPostService {
     @Transactional
     public PostDto createPost(PostRequest postRequest) {
         Post post = this.postRequestToPostMapper.apply(postRequest);
-        logger.info(postRequest + " is mapped to " + post);
+        this.logger.info(postRequest + " is mapped to " + post + " .");
+
         this.postRepository.save(post);
-        logger.info(post + " is created in database.");
-        this.kafkaProducer.send(Action.UPSERT, post);
+        this.logger.info(post + " is created in database.");
+
+        this.kafkaProducer.sendForUpsert(post);
+
         PostDto postDto = this.postToPostDtoMapper.apply(post);
-        logger.info(post + " is mapped to " + postDto);
+        this.logger.info(post + " is mapped to " + postDto + " .");
+
         return postDto;
     }
 
@@ -114,14 +123,19 @@ public class PostService implements IPostService {
     @Transactional
     public PostDto updatePost(UUID postId, PostRequest postRequest) {
         Post post = this.postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
-        logger.info(post + " is obtained from database.");
+        this.logger.info(post + " is obtained from database.");
+
         post = this.postWithPostRequestToPostUpdater.apply(post, postRequest);
-        logger.info(post + " is updated to " + post + " with " + postRequest);
+        this.logger.info(post + " is updated to " + post + " with " + postRequest + " .");
+
         this.postRepository.save(post);
-        logger.info(post + " is updated in database.");
-        this.kafkaProducer.send(Action.UPSERT, post);
+        this.logger.info(post + " is updated in database.");
+
+        this.kafkaProducer.sendForUpsert(post);
+
         PostDto postDto = this.postToPostDtoMapper.apply(post);
-        logger.info(post + " is mapped to " + postDto);
+        this.logger.info(post + " is mapped to " + postDto + " .");
+
         return postDto;
     }
 }

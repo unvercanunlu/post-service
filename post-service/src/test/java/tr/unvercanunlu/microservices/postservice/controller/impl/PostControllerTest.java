@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
+import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequestHelper;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
@@ -45,45 +46,13 @@ class PostControllerTest {
     @MockBean
     private IPostService postService;
 
+    @MockBean
+    private Logger logger;
+
     private final ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+
     private final ArgumentCaptor<PostRequest> postRequestCaptor = ArgumentCaptor.forClass(PostRequest.class);
-    private final BiConsumer<PostDto, PostDto> comparePostDto = (expected, actual) -> {
-        assertNotNull(actual);
 
-        assertNotNull(actual.getId());
-        assertEquals(expected.getId(), actual.getId());
-
-        assertNotNull(actual.getPostDate());
-        assertEquals(expected.getPostDate(), actual.getPostDate());
-
-        assertNotNull(actual.getViewCount());
-        assertEquals(expected.getViewCount(), actual.getViewCount());
-
-        assertNotNull(actual.getContent());
-        assertEquals(expected.getContent(), actual.getContent());
-
-        assertNotNull(actual.getAuthor());
-        assertEquals(expected.getAuthor(), actual.getAuthor());
-    };
-    private final BiConsumer<PostRequest, PostRequest> comparePostRequest = (expected, actual) -> {
-        assertNotNull(actual);
-
-        assertNotNull(actual.getPostDate());
-        assertEquals(expected.getPostDate(), actual.getPostDate());
-
-        assertNotNull(actual.getAuthor());
-        assertEquals(expected.getAuthor(), actual.getAuthor());
-
-        assertNotNull(actual.getContent());
-        assertEquals(expected.getContent(), actual.getContent());
-
-        assertNotNull(actual.getViewCount());
-        assertEquals(expected.getViewCount(), actual.getViewCount());
-    };
-    private final BiConsumer<UUID, UUID> comparePostId = (expected, actual) -> {
-        assertNotNull(actual);
-        assertEquals(expected, actual);
-    };
     private final BiConsumer<String, Map<String, Object>> comparePostNotFoundError = (postId, error) -> {
         assertNotNull(error);
 
@@ -100,16 +69,14 @@ class PostControllerTest {
         assertNotNull(data.get("postId"));
         assertEquals(postId, data.get("postId"));
     };
-    @MockBean
-    private Logger logger;
 
     @Test
     void givenPostRequest_whenCreatePost_thenReturnPostDto() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
-        PostRequest postRequest = PostRequestHelper.generatePostRequest.get();
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
-        PostDto expectedPostDto = PostDtoHelper.generatePostDto.get();
+        PostDto expectedPostDto = PostDtoHelper.generate.get();
 
         when(this.postService.createPost(any(PostRequest.class))).thenReturn(expectedPostDto);
 
@@ -123,11 +90,11 @@ class PostControllerTest {
 
         PostDto actualPostDto = this.objectMapper.readValue(result.getResponse().getContentAsString(), PostDto.class);
 
-        this.comparePostDto.accept(expectedPostDto, actualPostDto);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
         verify(this.postService, times(1)).createPost(this.postRequestCaptor.capture());
 
-        this.comparePostRequest.accept(postRequest, this.postRequestCaptor.getValue());
+        PostRequestHelper.compare.accept(postRequest, this.postRequestCaptor.getValue());
     }
 
     @Test
@@ -145,7 +112,7 @@ class PostControllerTest {
 
         verify(this.postService, times(1)).deletePost(this.idCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
     }
 
     @Test
@@ -169,14 +136,14 @@ class PostControllerTest {
 
         verify(this.postService, times(1)).deletePost(this.idCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
     }
 
     @Test
     void givenPostRequest_whenPostExists_whenGetPost_thenReturnPostDto() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
-        PostDto expectedPostDto = PostDtoHelper.generatePostDto.get();
+        PostDto expectedPostDto = PostDtoHelper.generate.get();
 
         UUID postId = expectedPostDto.getId();
 
@@ -190,11 +157,11 @@ class PostControllerTest {
 
         PostDto actualPostDto = this.objectMapper.readValue(result.getResponse().getContentAsString(), PostDto.class);
 
-        this.comparePostDto.accept(expectedPostDto, actualPostDto);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
         verify(this.postService, times(1)).getPost(this.idCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
     }
 
     @Test
@@ -218,14 +185,14 @@ class PostControllerTest {
 
         verify(this.postService, times(1)).getPost(this.idCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
     }
 
     @Test
     void whenGetAllPosts_thenReturnListOfPostDtos() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
-        PostDto expectedPostDto = PostDtoHelper.generatePostDto.get();
+        PostDto expectedPostDto = PostDtoHelper.generate.get();
 
         List<PostDto> expectedPostDtos = List.of(expectedPostDto);
 
@@ -244,7 +211,7 @@ class PostControllerTest {
 
         PostDto actualPostDto = actualPostDtos[0];
 
-        this.comparePostDto.accept(expectedPostDto, actualPostDto);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
         verify(this.postService, times(1)).getAllPosts();
     }
@@ -253,11 +220,11 @@ class PostControllerTest {
     void givenPostRequestAndPostId_whenPostExists_whenUpdatePost_thenReturnPostDto() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
-        PostRequest postRequest = PostRequestHelper.generatePostRequest.get();
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
         UUID postId = UUID.randomUUID();
 
-        PostDto expectedPostDto = PostDtoHelper.generatePostDto.get();
+        PostDto expectedPostDto = PostDtoHelper.generate.get();
 
         when(this.postService.updatePost(any(UUID.class), any(PostRequest.class))).thenReturn(expectedPostDto);
 
@@ -271,20 +238,20 @@ class PostControllerTest {
 
         PostDto actualPostDto = this.objectMapper.readValue(result.getResponse().getContentAsString(), PostDto.class);
 
-        this.comparePostDto.accept(expectedPostDto, actualPostDto);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
         verify(this.postService, times(1)).updatePost(this.idCaptor.capture(), this.postRequestCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
 
-        this.comparePostRequest.accept(postRequest, this.postRequestCaptor.getValue());
+        PostRequestHelper.compare.accept(postRequest, this.postRequestCaptor.getValue());
     }
 
     @Test
     void givenPostRequestAndPostId_whenPostDoesNotExist_whenUpdatePost_thenReturnFail() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
-        PostRequest postRequest = PostRequestHelper.generatePostRequest.get();
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
         UUID postId = UUID.randomUUID();
 
@@ -305,8 +272,8 @@ class PostControllerTest {
 
         verify(this.postService, times(1)).updatePost(this.idCaptor.capture(), this.postRequestCaptor.capture());
 
-        this.comparePostId.accept(postId, this.idCaptor.getValue());
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
 
-        this.comparePostRequest.accept(postRequest, this.postRequestCaptor.getValue());
+        PostRequestHelper.compare.accept(postRequest, this.postRequestCaptor.getValue());
     }
 }

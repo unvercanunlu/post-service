@@ -1,6 +1,9 @@
 package tr.unvercanunlu.microservices.postservice.model.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -20,8 +23,4 @@ public abstract class BaseEntity implements Serializable {
     @GeneratedValue
     @Column(name = "id", updatable = false, nullable = false, unique = true)
     private UUID id;
-
-    @Version
-    @Column(name = "version")
-    private Long version;
 }

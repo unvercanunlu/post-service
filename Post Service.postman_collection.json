@@ -7,21 +7,12 @@
   },
   "item": [
     {
-      "name": "Add Post",
+      "name": "Get Post",
       "request": {
-        "method": "POST",
+        "method": "GET",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"author\": \"author-1\",\n    \"content\": \"content-1\",\n    \"viewCount\": 1,\n    \"postDate\": \"2023-03-03T00:18:27\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
         "url": {
-          "raw": "http://localhost:3500/api/v1/posts",
+          "raw": "http://localhost:3500/api/v1/posts/a815227b-d07a-4167-9e53-330b431ab15d",
           "protocol": "http",
           "host": [
             "localhost"
@@ -30,7 +21,8 @@
           "path": [
             "api",
             "v1",
-            "posts"
+            "posts",
+            "a815227b-d07a-4167-9e53-330b431ab15d"
           ]
         }
       },
@@ -90,9 +82,70 @@
       "response": []
     },
     {
-      "name": "Get Post",
+      "name": "Get top ordered Posts",
       "request": {
         "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3500/api/v1/posts?top=3&order=view",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3500",
+          "path": [
+            "api",
+            "v1",
+            "posts"
+          ],
+          "query": [
+            {
+              "key": "top",
+              "value": "3"
+            },
+            {
+              "key": "order",
+              "value": "view"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Post",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"author\": \"author-1\",\n    \"content\": \"content-1\",\n    \"viewCount\": 1,\n    \"postDate\": \"2023-03-03T01:18:27\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3500/api/v1/posts",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3500",
+          "path": [
+            "api",
+            "v1",
+            "posts"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Post Exists",
+      "request": {
+        "method": "HEAD",
         "header": [],
         "url": {
           "raw": "http://localhost:3500/api/v1/posts/a815227b-d07a-4167-9e53-330b431ab15d",
@@ -106,27 +159,6 @@
             "v1",
             "posts",
             "a815227b-d07a-4167-9e53-330b431ab15d"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get All Posts",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3500/api/v1/posts",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "3500",
-          "path": [
-            "api",
-            "v1",
-            "posts"
           ]
         }
       },

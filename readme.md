@@ -17,3 +17,5 @@
 - Host: localhost
 - Port: 3500 (API Gateway port)
 - Example requests are added as Postman collection.
+- H2 database console is enabled. -> localhost:{ port }/h2
+- Swagger is enabled. -> localhost:{ port }/swagger-ui/index.html

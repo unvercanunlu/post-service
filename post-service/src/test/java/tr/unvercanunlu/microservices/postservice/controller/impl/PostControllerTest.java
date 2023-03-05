@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
+import tr.unvercanunlu.microservices.postservice.model.constant.Order;
+import tr.unvercanunlu.microservices.postservice.model.constant.OrderHelper;
 import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequestHelper;
@@ -37,28 +39,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class PostControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
-    private IPostService postService;
-
-    @MockBean
-    private Logger logger;
-
     private final ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
 
     private final ArgumentCaptor<PostRequest> postRequestCaptor = ArgumentCaptor.forClass(PostRequest.class);
+
+    private final ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+
+    private final ArgumentCaptor<Integer> topCaptor = ArgumentCaptor.forClass(Integer.class);
 
     private final BiConsumer<String, Map<String, Object>> comparePostNotFoundError = (postId, error) -> {
         assertNotNull(error);
 
         assertTrue(error.containsKey("reason"));
         assertNotNull(error.get("reason"));
-        assertEquals("Post not found with " + postId + " ID", error.get("reason"));
+        assertEquals("Post with " + postId + " ID  is not found.", error.get("reason"));
 
         assertTrue(error.containsKey("data"));
         assertNotNull(error.get("data"));
@@ -69,6 +63,32 @@ class PostControllerTest {
         assertNotNull(data.get("postId"));
         assertEquals(postId, data.get("postId"));
     };
+
+    private final BiConsumer<String, Map<String, Object>> compareOrderNotSuitableError = (order, error) -> {
+        assertNotNull(error);
+
+        assertTrue(error.containsKey("reason"));
+        assertNotNull(error.get("reason"));
+        assertEquals("Order with " + order + " ID is not suitable.", error.get("reason"));
+
+        assertTrue(error.containsKey("data"));
+        assertNotNull(error.get("data"));
+
+        Map<String, String> data = (Map<String, String>) error.get("data");
+
+        assertTrue(data.containsKey("order"));
+        assertNotNull(data.get("order"));
+        assertEquals(order, data.get("order"));
+    };
+
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @MockBean
+    private IPostService postService;
+    @MockBean
+    private Logger logger;
 
     @Test
     void givenPostRequest_whenCreatePost_thenReturnPostDto() throws Exception {
@@ -98,7 +118,7 @@ class PostControllerTest {
     }
 
     @Test
-    void givenPostId_whenPostExists_whenDeletePost_thenReturnSuccess() throws Exception {
+    void givenPostId_whenPostExists_whenDeletePost() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
         UUID postId = UUID.randomUUID();
@@ -116,7 +136,7 @@ class PostControllerTest {
     }
 
     @Test
-    void givenPostId_whenPostDoesNotExist_whenDeletePost_thenReturnFail() throws Exception {
+    void givenPostId_whenPostDoesNotExist_whenDeletePost_thenReturnPostNotFoundError() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
         UUID postId = UUID.randomUUID();
@@ -165,7 +185,7 @@ class PostControllerTest {
     }
 
     @Test
-    void givenPostId_whenPostDoesNotExist_whenGetPost_thenReturnFail() throws Exception {
+    void givenPostId_whenPostDoesNotExist_whenGetPost_thenReturnPostNotFoundError() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
         UUID postId = UUID.randomUUID();
@@ -186,34 +206,6 @@ class PostControllerTest {
         verify(this.postService, times(1)).getPost(this.idCaptor.capture());
 
         PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
-    }
-
-    @Test
-    void whenGetAllPosts_thenReturnListOfPostDtos() throws Exception {
-        doNothing().when(this.logger).info(any(String.class));
-
-        PostDto expectedPostDto = PostDtoHelper.generate.get();
-
-        List<PostDto> expectedPostDtos = List.of(expectedPostDto);
-
-        when(this.postService.getAllPosts()).thenReturn(expectedPostDtos);
-
-        MvcResult result = this.mockMvc.perform(get("/api/v1/posts"))
-                .andDo(print())
-                .andExpect(status().is(HttpStatus.OK.value()))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn();
-
-        PostDto[] actualPostDtos = this.objectMapper.readValue(result.getResponse().getContentAsString(), PostDto[].class);
-
-        assertNotNull(actualPostDtos);
-        assertEquals(expectedPostDtos.size(), actualPostDtos.length);
-
-        PostDto actualPostDto = actualPostDtos[0];
-
-        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
-
-        verify(this.postService, times(1)).getAllPosts();
     }
 
     @Test
@@ -248,7 +240,7 @@ class PostControllerTest {
     }
 
     @Test
-    void givenPostRequestAndPostId_whenPostDoesNotExist_whenUpdatePost_thenReturnFail() throws Exception {
+    void givenPostRequestAndPostId_whenPostDoesNotExist_whenUpdatePost_thenReturnPostNotFoundError() throws Exception {
         doNothing().when(this.logger).info(any(String.class));
 
         PostRequest postRequest = PostRequestHelper.generate.get();
@@ -275,5 +267,109 @@ class PostControllerTest {
         PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
 
         PostRequestHelper.compare.accept(postRequest, this.postRequestCaptor.getValue());
+    }
+
+    @Test
+    void givenPostId_whenPostExists_whenCheckExistsPost_thenReturnSuccess() throws Exception {
+        doNothing().when(this.logger).info(any(String.class));
+
+        UUID postId = UUID.randomUUID();
+
+        doNothing().when(this.postService).checkExistsPost(postId);
+
+        this.mockMvc.perform(head("/api/v1/posts/" + postId))
+                .andDo(print())
+                .andExpect(status().is(HttpStatus.OK.value()))
+                .andReturn();
+
+        verify(this.postService, times(1)).checkExistsPost(this.idCaptor.capture());
+
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
+    }
+
+    @Test
+    void givenPostId_whenPostDoesNotExist_whenCheckExistsPost_thenReturnPostNotFoundError() throws Exception {
+        doNothing().when(this.logger).info(any(String.class));
+
+        UUID postId = UUID.randomUUID();
+
+        doThrow(new PostNotFoundException(postId)).when(this.postService).checkExistsPost(postId);
+
+        MvcResult result = this.mockMvc.perform(head("/api/v1/posts/" + postId))
+                .andDo(print())
+                .andExpect(status().is(HttpStatus.NOT_FOUND.value()))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        Map<String, Object> error = this.objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<Map<String, Object>>() {
+        });
+
+        this.comparePostNotFoundError.accept(postId.toString(), error);
+
+        verify(this.postService, times(1)).checkExistsPost(this.idCaptor.capture());
+
+        PostHelper.comparePostId.accept(postId, this.idCaptor.getValue());
+    }
+
+    @Test
+    void givenOrderAndTop_whenGetTopOrderedPosts_thenReturnListOfPostDtos() throws Exception {
+        doNothing().when(this.logger).info(any(String.class));
+
+        PostDto expectedPostDto = PostDtoHelper.generate.get();
+
+        List<PostDto> expectedPostDtos = List.of(
+                expectedPostDto,
+                expectedPostDto,
+                expectedPostDto
+        );
+
+        Order order = Order.VIEW;
+
+        Integer top = 3;
+
+        when(this.postService.getTopOrderedPosts(order, top)).thenReturn(expectedPostDtos);
+
+        MvcResult result = this.mockMvc.perform(get("/api/v1/posts?order=" + order.getCode() + "&top=" + top))
+                .andDo(print())
+                .andExpect(status().is(HttpStatus.OK.value()))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        PostDto[] actualPostDtos = this.objectMapper.readValue(result.getResponse().getContentAsString(), PostDto[].class);
+
+        assertNotNull(actualPostDtos);
+        assertEquals(expectedPostDtos.size(), actualPostDtos.length);
+
+        PostDto actualPostDto = actualPostDtos[0];
+
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
+
+        verify(this.postService, times(1)).getTopOrderedPosts(this.orderCaptor.capture(), this.topCaptor.capture());
+
+        OrderHelper.compareOrder.accept(order, this.orderCaptor.getValue());
+
+        OrderHelper.compareTop.accept(top, this.topCaptor.getValue());
+    }
+
+    @Test
+    void givenNotSuitableOrderAndTop_whenGetTopOrderedPosts_thenReturnOrderNotSuitableError() throws Exception {
+        doNothing().when(this.logger).info(any(String.class));
+
+        String order = "content";
+
+        int top = 3;
+
+        MvcResult result = this.mockMvc.perform(get("/api/v1/posts?order=" + order + "&top=" + top))
+                .andDo(print())
+                .andExpect(status().is(HttpStatus.BAD_REQUEST.value()))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        Map<String, Object> error = this.objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<Map<String, Object>>() {
+        });
+
+        this.compareOrderNotSuitableError.accept(order, error);
+
+        verify(this.postService, times(0)).getTopOrderedPosts(any(Order.class), any(Integer.class));
     }
 }

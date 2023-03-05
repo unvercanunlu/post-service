@@ -19,7 +19,7 @@ public enum Order implements Serializable {
 
     DATE("date", "Order By Post Date");
 
-    public static final Function<String, Order> getByName = (name) ->
+    public static final Function<String, Order> getByName = name ->
             Arrays.stream(Order.values())
                     .filter(o -> o.getCode().equals(name))
                     .findAny()

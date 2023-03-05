@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface IPostController {
 
-    ResponseEntity<List<PostDto>> getAllPosts();
+    ResponseEntity<List<PostDto>> getTopOrderedPosts(String orderName, Integer top);
 
     ResponseEntity<PostDto> getPost(UUID postId);
 
@@ -18,4 +18,8 @@ public interface IPostController {
     ResponseEntity<PostDto> createPost(PostRequest postRequest);
 
     ResponseEntity<PostDto> updatePost(UUID postId, PostRequest postRequest);
+
+    ResponseEntity<Void> checkExistsPost(UUID postId);
+
+    // ResponseEntity<PostDto> updatePartialPost(UUID postId, PostRequest postRequest);
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tr.unvercanunlu.microservices.postservice.config.ApiConfig;
 import tr.unvercanunlu.microservices.postservice.controller.IPostController;
+import tr.unvercanunlu.microservices.postservice.model.constant.Order;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
 import tr.unvercanunlu.microservices.postservice.service.IPostService;
@@ -29,12 +30,19 @@ public class PostController implements IPostController {
 
     @Override
     @GetMapping
-    public ResponseEntity<List<PostDto>> getAllPosts() {
-        this.logger.info("Get request is received.");
+    public ResponseEntity<List<PostDto>> getTopOrderedPosts(
+            @RequestParam(name = "order", defaultValue = ApiConfig.DEFAULT_ORDER) String orderName,
+            @RequestParam(name = "top", defaultValue = ApiConfig.DEFAULT_TOP) Integer top
+    ) {
+        this.logger.info("Get request for ordered by " + orderName + " and top " + top + " is received.");
 
-        List<PostDto> postDtos = this.postService.getAllPosts();
+        Order order = Order.getByName.apply(orderName);
 
-        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDtos);
+        List<PostDto> postDtos = this.postService.getTopOrderedPosts(order, top);
+
+        return ResponseEntity.status(HttpStatus.OK.value())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(postDtos);
     }
 
     @Override
@@ -44,7 +52,9 @@ public class PostController implements IPostController {
 
         PostDto postDto = this.postService.getPost(postId);
 
-        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
+        return ResponseEntity.status(HttpStatus.OK.value())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(postDto);
     }
 
     @Override
@@ -64,16 +74,52 @@ public class PostController implements IPostController {
 
         PostDto postDto = this.postService.createPost(postRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
+        return ResponseEntity.status(HttpStatus.CREATED.value())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(postDto);
     }
 
     @Override
     @PutMapping(path = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PostDto> updatePost(@PathVariable(name = "postId") UUID postId, @RequestBody PostRequest postRequest) {
+    public ResponseEntity<PostDto> updatePost(
+            @PathVariable(name = "postId") UUID postId,
+            @RequestBody PostRequest postRequest
+    ) {
         this.logger.info("Put request with " + postRequest + " and " + postId + " ID is received.");
 
         PostDto postDto = this.postService.updatePost(postId, postRequest);
 
-        return ResponseEntity.status(HttpStatus.OK.value()).contentType(MediaType.APPLICATION_JSON).body(postDto);
+        return ResponseEntity.status(HttpStatus.OK.value())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(postDto);
     }
+
+    @Override
+    @RequestMapping(path = "/{postId}", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> checkExistsPost(@PathVariable(name = "postId") UUID postId) {
+        this.logger.info("Head request with " + postId + " ID is received.");
+
+        this.postService.checkExistsPost(postId);
+
+        return ResponseEntity.status(HttpStatus.OK.value()).build();
+    }
+
+    /*
+
+    @Override
+    @PatchMapping(path = "/{postId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostDto> updatePartialPost(
+            @PathVariable(name = "postId") UUID postId,
+            @RequestBody PostRequest postRequest
+    ) {
+        this.logger.info("Put request with " + postRequest + " and " + postId + " ID is received.");
+
+        PostDto postDto = this.postService.updatePartialPost(postId, postRequest);
+
+        return ResponseEntity.status(HttpStatus.OK.value())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(postDto);
+    }
+
+    */
 }

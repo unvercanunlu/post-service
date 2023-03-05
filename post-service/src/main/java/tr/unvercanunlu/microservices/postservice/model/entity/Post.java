@@ -25,7 +25,7 @@ public class Post extends BaseEntity implements Serializable {
     @Column(name = "content")
     private String content;
 
-    @Column(name = "viewCount")
+    @Column(name = "view_count")
     private Long viewCount;
 
     @Temporal(value = TemporalType.TIMESTAMP)

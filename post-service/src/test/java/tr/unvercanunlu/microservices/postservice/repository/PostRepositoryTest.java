@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
+import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,12 +28,7 @@ class PostRepositoryTest {
 
     @Test
     void givenPostId_whenPostDoesExists_whenCheckPostExistsById_thenReturnTrue() {
-        Post post = Post.builder()
-                .author("author")
-                .content("content")
-                .viewCount(1L)
-                .postDate(ZonedDateTime.now())
-                .build();
+        Post post = PostHelper.generate.get();
 
         post = this.entityManager.persist(post);
 
@@ -52,5 +47,4 @@ class PostRepositoryTest {
         assertNotNull(postExists);
         assertFalse(postExists);
     }
-
 }

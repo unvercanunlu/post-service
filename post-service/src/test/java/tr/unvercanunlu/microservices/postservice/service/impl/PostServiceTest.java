@@ -31,12 +31,13 @@ class PostServiceTest {
     @Mock
     private IPostRepository postRepository;
 
-    private final ArgumentCaptor<UUID> postIdCaptor = ArgumentCaptor.forClass(UUID.class);
+    @Mock
+    private MessageProducer messageProducer;
 
     @InjectMocks
     private PostService postService;
-    @Mock
-    private MessageProducer messageProducer;
+
+    private final ArgumentCaptor<UUID> postIdCaptor = ArgumentCaptor.forClass(UUID.class);
 
     private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
 

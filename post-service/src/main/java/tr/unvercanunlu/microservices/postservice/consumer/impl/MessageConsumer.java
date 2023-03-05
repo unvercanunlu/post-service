@@ -87,7 +87,7 @@ public class MessageConsumer implements IMessageConsumer<String, String> {
             return;
         }
 
-        this.postRepository.save(post);
+        post = this.postRepository.save(post);
         this.logger.info(post + " is saved in database.");
     }
 }

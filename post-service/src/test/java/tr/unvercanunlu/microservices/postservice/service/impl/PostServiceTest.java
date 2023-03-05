@@ -35,9 +35,10 @@ class PostServiceTest {
 
     @InjectMocks
     private PostService postService;
-    private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
     @Mock
-    private MessageProducer kafkaProducer;
+    private MessageProducer messageProducer;
+
+    private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
 
     @Test
     void whenGetAllPosts_thenReturnListOfPostDtos() {
@@ -114,7 +115,7 @@ class PostServiceTest {
 
         when(this.postRepository.checkExistsById(post.getId())).thenReturn(true);
 
-        doNothing().when(this.kafkaProducer).sendForDelete(post.getId());
+        doNothing().when(this.messageProducer).sendForDelete(post.getId());
 
         this.postService.deletePost(post.getId());
 
@@ -122,7 +123,7 @@ class PostServiceTest {
 
         PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
 
-        verify(this.kafkaProducer, times(1)).sendForDelete(this.postIdCaptor.capture());
+        verify(this.messageProducer, times(1)).sendForDelete(this.postIdCaptor.capture());
 
         PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
     }
@@ -139,7 +140,7 @@ class PostServiceTest {
         } catch (PostNotFoundException ex) {
             verify(this.postRepository, times(0)).deleteById(any(UUID.class));
 
-            verify(this.kafkaProducer, times(0)).sendForDelete(any(UUID.class));
+            verify(this.messageProducer, times(0)).sendForDelete(any(UUID.class));
 
             verify(this.postRepository, times(1)).checkExistsById(this.postIdCaptor.capture());
 
@@ -176,6 +177,8 @@ class PostServiceTest {
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
 
+        doNothing().when(this.messageProducer).sendForUpsert(post);
+
         PostDto actualPostDto = this.postService.createPost(postRequest);
 
         PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
@@ -183,13 +186,17 @@ class PostServiceTest {
         verify(this.postRepository, times(1)).save(this.postCaptor.capture());
 
         PostHelper.compare.accept(postBeforeSave, this.postCaptor.getValue());
+
+        verify(this.messageProducer, times(1)).sendForUpsert(this.postCaptor.capture());
+
+        PostHelper.compare.accept(post, this.postCaptor.getValue());
     }
 
     @Test
     void givenPostRequestAndPostId_whenPostExists_whenUpdatePost_thenReturnPostDto() {
         PostRequest postRequest = PostRequestHelper.generate.get();
 
-        Post expectedPost = Post.builder()
+        Post post = Post.builder()
                 .id(UUID.randomUUID())
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
@@ -198,28 +205,34 @@ class PostServiceTest {
                 .build();
 
         PostDto expectedPostDto = PostDto.builder()
-                .id(expectedPost.getId())
-                .author(expectedPost.getAuthor())
-                .content(expectedPost.getContent())
-                .viewCount(expectedPost.getViewCount())
-                .postDate(expectedPost.getPostDate().toLocalDateTime())
+                .id(post.getId())
+                .author(post.getAuthor())
+                .content(post.getContent())
+                .viewCount(post.getViewCount())
+                .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
-        when(this.postRepository.save(any(Post.class))).thenReturn(expectedPost);
+        when(this.postRepository.save(any(Post.class))).thenReturn(post);
 
-        when(this.postRepository.findById(expectedPost.getId())).thenReturn(Optional.of(expectedPost));
+        when(this.postRepository.findById(post.getId())).thenReturn(Optional.of(post));
 
-        PostDto actualPostDto = this.postService.updatePost(expectedPost.getId(), postRequest);
+        doNothing().when(this.messageProducer).sendForUpsert(post);
+
+        PostDto actualPostDto = this.postService.updatePost(post.getId(), postRequest);
 
         PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
         verify(this.postRepository, times(1)).save(this.postCaptor.capture());
 
-        PostHelper.compare.accept(expectedPost, this.postCaptor.getValue());
+        PostHelper.compare.accept(post, this.postCaptor.getValue());
 
         verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 
-        PostHelper.comparePostId.accept(expectedPost.getId(), this.postIdCaptor.getValue());
+        PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
+
+        verify(this.messageProducer, times(1)).sendForUpsert(this.postCaptor.capture());
+
+        PostHelper.compare.accept(post, this.postCaptor.getValue());
     }
 
     @Test
@@ -235,6 +248,8 @@ class PostServiceTest {
 
         } catch (PostNotFoundException ex) {
             verify(this.postRepository, times(0)).save(any(Post.class));
+
+            verify(this.messageProducer, times(0)).sendForUpsert(any(Post.class));
 
             verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 

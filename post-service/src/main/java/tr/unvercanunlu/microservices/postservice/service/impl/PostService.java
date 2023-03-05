@@ -67,7 +67,10 @@ public class PostService implements IPostService {
         List<PostDto> postDtos = posts.stream().map(this.postToPostDtoMapper).toList();
         this.logger.info(posts + " are mapped to " + postDtos + " .");
 
-        postDtos = postDtos.stream().sorted(Comparator.nullsLast(Comparator.comparing(PostDto::getPostDate).reversed())).toList();
+        postDtos = postDtos.stream()
+                .sorted(Comparator.nullsLast(
+                        Comparator.comparing(PostDto::getPostDate).reversed()))
+                .toList();
         this.logger.info(postDtos + " are sorted by post date.");
 
         return postDtos;
@@ -94,6 +97,7 @@ public class PostService implements IPostService {
         if (postExists) {
             this.postRepository.deleteById(postId);
             this.logger.info("Post with " + postId + " ID is deleted from database.");
+
             this.kafkaProducer.sendForDelete(postId);
 
         } else {

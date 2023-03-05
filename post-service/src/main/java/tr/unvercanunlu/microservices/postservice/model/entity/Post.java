@@ -8,7 +8,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -30,5 +30,5 @@ public class Post extends BaseEntity implements Serializable {
 
     @Temporal(value = TemporalType.TIMESTAMP)
     @Column(name = "post_date")
-    private ZonedDateTime postDate;
+    private LocalDateTime postDate;
 }

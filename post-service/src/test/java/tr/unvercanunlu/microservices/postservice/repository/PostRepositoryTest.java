@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
 import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,12 +79,12 @@ class PostRepositoryTest {
     @Test
     void givenTop_whenGetTopOrderedByDateList_thenReturnListOfPostsOrderedByDate() {
         Post post1 = PostHelper.generate.get();
-        post1.setPostDate(ZonedDateTime.now().minusDays(2));
+        post1.setPostDate(LocalDateTime.now().minusDays(2));
 
         post1 = this.entityManager.persist(post1);
 
         Post post2 = PostHelper.generate.get();
-        post2.setPostDate(ZonedDateTime.now().minusDays(1));
+        post2.setPostDate(LocalDateTime.now().minusDays(1));
 
         post2 = this.entityManager.persist(post2);
 

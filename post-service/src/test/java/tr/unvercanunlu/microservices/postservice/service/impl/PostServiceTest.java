@@ -19,7 +19,6 @@ import tr.unvercanunlu.microservices.postservice.model.response.PostDtoHelper;
 import tr.unvercanunlu.microservices.postservice.producer.impl.MessageProducer;
 import tr.unvercanunlu.microservices.postservice.repository.IPostRepository;
 
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +56,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
+                .postDate(post.getPostDate())
                 .build();
 
         when(this.postRepository.findById(post.getId())).thenReturn(Optional.of(post));
@@ -134,7 +133,7 @@ class PostServiceTest {
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
-                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
+                .postDate(postRequest.getPostDate())
                 .build();
 
         Post post = Post.builder()
@@ -142,7 +141,7 @@ class PostServiceTest {
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
-                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
+                .postDate(postRequest.getPostDate())
                 .build();
 
         PostDto expectedPostDto = PostDto.builder()
@@ -150,7 +149,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
+                .postDate(post.getPostDate())
                 .build();
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
@@ -179,7 +178,7 @@ class PostServiceTest {
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
-                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
+                .postDate(postRequest.getPostDate())
                 .build();
 
         PostDto expectedPostDto = PostDto.builder()
@@ -187,7 +186,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
+                .postDate(post.getPostDate())
                 .build();
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
@@ -248,7 +247,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
+                .postDate(post.getPostDate())
                 .build();
 
         List<Post> posts = new ArrayList<>();
@@ -290,7 +289,7 @@ class PostServiceTest {
                 .author(post.getAuthor())
                 .content(post.getContent())
                 .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
+                .postDate(post.getPostDate())
                 .build();
 
         List<Post> posts = new ArrayList<>();

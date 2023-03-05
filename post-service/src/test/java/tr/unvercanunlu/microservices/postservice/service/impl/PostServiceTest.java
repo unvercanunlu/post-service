@@ -6,7 +6,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tr.unvercanunlu.microservices.postservice.exception.OrderNotSuitableException;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
+import tr.unvercanunlu.microservices.postservice.model.constant.Order;
+import tr.unvercanunlu.microservices.postservice.model.constant.OrderHelper;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
 import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
@@ -17,9 +20,11 @@ import tr.unvercanunlu.microservices.postservice.producer.impl.MessageProducer;
 import tr.unvercanunlu.microservices.postservice.repository.IPostRepository;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,6 +32,12 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(value = MockitoExtension.class)
 class PostServiceTest {
+
+    private final ArgumentCaptor<UUID> postIdCaptor = ArgumentCaptor.forClass(UUID.class);
+
+    private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+
+    private final ArgumentCaptor<Integer> topCaptor = ArgumentCaptor.forClass(Integer.class);
 
     @Mock
     private IPostRepository postRepository;
@@ -36,40 +47,6 @@ class PostServiceTest {
 
     @InjectMocks
     private PostService postService;
-
-    private final ArgumentCaptor<UUID> postIdCaptor = ArgumentCaptor.forClass(UUID.class);
-
-    private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-
-    @Test
-    void whenGetAllPosts_thenReturnListOfPostDtos() {
-        Post post = PostHelper.generate.get();
-
-        List<Post> posts = List.of(post);
-
-        PostDto expectedPostDto = PostDto.builder()
-                .id(post.getId())
-                .author(post.getAuthor())
-                .content(post.getContent())
-                .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
-                .build();
-
-        List<PostDto> expectedPostDtos = List.of(expectedPostDto);
-
-        when(this.postRepository.findAll()).thenReturn(posts);
-
-        List<PostDto> actualPostDtos = this.postService.getAllPosts();
-
-        verify(this.postRepository, times(1)).findAll();
-
-        assertNotNull(actualPostDtos);
-        assertEquals(expectedPostDtos.size(), actualPostDtos.size());
-
-        PostDto actualPostDto = actualPostDtos.get(0);
-
-        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
-    }
 
     @Test
     void givenPostId_whenPostExists_whenGetPost_thenReturnPostDto() {
@@ -255,6 +232,106 @@ class PostServiceTest {
             verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 
             PostHelper.comparePostId.accept(postId, this.postIdCaptor.getValue());
+        }
+    }
+
+    @Test
+    void givenViewOrderAndTop_whenGetTopOrderedPosts_thenReturnListOfPostDtos() {
+        Order order = Order.VIEW;
+
+        Integer top = 3;
+
+        Post post = PostHelper.generate.get();
+
+        PostDto expectedPostDto = PostDto.builder()
+                .id(post.getId())
+                .author(post.getAuthor())
+                .content(post.getContent())
+                .viewCount(post.getViewCount())
+                .postDate(post.getPostDate().toLocalDateTime())
+                .build();
+
+        List<Post> posts = new ArrayList<>();
+        List<PostDto> expectedPostDtos = new ArrayList<>();
+        IntStream.range(0, top)
+                .forEach(x -> {
+                    expectedPostDtos.add(expectedPostDto);
+                    posts.add(post);
+                });
+
+        when(this.postRepository.getTopOrderedByViewList(top)).thenReturn(posts);
+
+        List<PostDto> actualPostDtos = this.postService.getTopOrderedPosts(order, top);
+
+        assertNotNull(actualPostDtos);
+        assertEquals(expectedPostDtos.size(), actualPostDtos.size());
+
+        PostDto actualPostDto = actualPostDtos.get(0);
+
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
+
+        verify(this.postRepository, times(0)).getTopOrderedByDateList(any(Integer.class));
+
+        verify(this.postRepository, times(1)).getTopOrderedByViewList(this.topCaptor.capture());
+
+        OrderHelper.compareTop.accept(top, this.topCaptor.getValue());
+    }
+
+    @Test
+    void givenDateOrderAndTop_whenGetTopOrderedPosts_thenReturnListOfPostDtos() {
+        Order order = Order.DATE;
+
+        Integer top = 3;
+
+        Post post = PostHelper.generate.get();
+
+        PostDto expectedPostDto = PostDto.builder()
+                .id(post.getId())
+                .author(post.getAuthor())
+                .content(post.getContent())
+                .viewCount(post.getViewCount())
+                .postDate(post.getPostDate().toLocalDateTime())
+                .build();
+
+        List<Post> posts = new ArrayList<>();
+        List<PostDto> expectedPostDtos = new ArrayList<>();
+        IntStream.range(0, top)
+                .forEach(x -> {
+                    expectedPostDtos.add(expectedPostDto);
+                    posts.add(post);
+                });
+
+        when(this.postRepository.getTopOrderedByDateList(top)).thenReturn(posts);
+
+        List<PostDto> actualPostDtos = this.postService.getTopOrderedPosts(order, top);
+
+        assertNotNull(actualPostDtos);
+        assertEquals(expectedPostDtos.size(), actualPostDtos.size());
+
+        PostDto actualPostDto = actualPostDtos.get(0);
+
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
+
+        verify(this.postRepository, times(0)).getTopOrderedByViewList(any(Integer.class));
+
+        verify(this.postRepository, times(1)).getTopOrderedByDateList(this.topCaptor.capture());
+
+        OrderHelper.compareTop.accept(top, this.topCaptor.getValue());
+    }
+
+    @Test
+    void givenNullOrderAndTop_whenGetTopOrderedPosts_thenThrowOrderNotSuitableException() {
+        Order order = Order.DATE;
+
+        Integer top = 3;
+
+        try {
+            this.postService.getTopOrderedPosts(order, top);
+
+        } catch (OrderNotSuitableException ex) {
+            verify(this.postRepository, times(0)).getTopOrderedByViewList(any(Integer.class));
+
+            verify(this.postRepository, times(0)).getTopOrderedByDateList(this.topCaptor.capture());
         }
     }
 }

@@ -23,10 +23,12 @@ import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDtoHelper;
 import tr.unvercanunlu.microservices.postservice.service.IPostService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -83,10 +85,13 @@ class PostControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     @MockBean
     private IPostService postService;
+
     @MockBean
     private Logger logger;
 
@@ -317,15 +322,12 @@ class PostControllerTest {
 
         PostDto expectedPostDto = PostDtoHelper.generate.get();
 
-        List<PostDto> expectedPostDtos = List.of(
-                expectedPostDto,
-                expectedPostDto,
-                expectedPostDto
-        );
-
         Order order = Order.VIEW;
 
         Integer top = 3;
+
+        List<PostDto> expectedPostDtos = new ArrayList<>();
+        IntStream.range(0, top).forEach(i -> expectedPostDtos.add(expectedPostDto));
 
         when(this.postService.getTopOrderedPosts(order, top)).thenReturn(expectedPostDtos);
 

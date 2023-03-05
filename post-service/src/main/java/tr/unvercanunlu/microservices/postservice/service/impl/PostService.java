@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tr.unvercanunlu.microservices.postservice.exception.OrderNotSuitableException;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
 import tr.unvercanunlu.microservices.postservice.model.constant.Order;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
@@ -51,6 +52,8 @@ public class PostService implements IPostService {
         return post;
     };
 
+    /*
+
     private final BiFunction<Post, PostRequest, Post> postWithPostRequestToPostPartialUpdater = (post, postRequest) -> {
         Optional.ofNullable(postRequest.getContent()).ifPresent(post::setContent);
         Optional.ofNullable(postRequest.getAuthor()).ifPresent(post::setAuthor);
@@ -58,6 +61,8 @@ public class PostService implements IPostService {
         Optional.ofNullable(postRequest.getViewCount()).ifPresent(post::setViewCount);
         return post;
     };
+
+    */
 
     private final IPostRepository postRepository;
 
@@ -71,18 +76,16 @@ public class PostService implements IPostService {
     @Override
     @Transactional(readOnly = true)
     public List<PostDto> getTopOrderedPosts(Order order, Integer top) {
+        Optional.ofNullable(order).orElseThrow(() -> new OrderNotSuitableException(String.valueOf(order)));
+
         List<Post> posts = new ArrayList<>();
+        if (order.equals(Order.VIEW)) {
+            posts = this.postRepository.getTopOrderedByViewList(top);
+            this.logger.info(posts + " are obtained from database ordered by view.");
 
-        switch (order) {
-            case VIEW -> {
-                posts = this.postRepository.getTopOrderedByViewList(top);
-                this.logger.info(posts + " are obtained from database ordered by view.");
-            }
-
-            case DATE -> {
-                posts = this.postRepository.getTopOrderedByDateList(top);
-                this.logger.info(posts + " are obtained from database ordered by date.");
-            }
+        } else if (order.equals(Order.DATE)) {
+            posts = this.postRepository.getTopOrderedByDateList(top);
+            this.logger.info(posts + " are obtained from database ordered by date.");
         }
 
         List<PostDto> postDtos = posts.stream().map(this.postToPostDtoMapper).toList();

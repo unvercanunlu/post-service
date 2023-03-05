@@ -25,20 +25,11 @@ public enum Order implements Serializable {
                     .findAny()
                     .orElseThrow(() -> new OrderNotSuitableException(name));
     private final String code;
+
     private final String description;
 
     @JsonValue
     public String getCode() {
         return code;
-    }
-
-    public static class Names {
-
-        public static final String VIEW = "view";
-
-        public static final String DATE_NAME = "date";
-
-        private Names() {
-        }
     }
 }

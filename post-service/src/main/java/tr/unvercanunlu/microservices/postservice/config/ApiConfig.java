@@ -8,6 +8,10 @@ public class ApiConfig {
 
     public static final String POST_API = BASE + "/" + "posts";
 
+    public static final String DEFAULT_ORDER = "view";
+
+    public static final String DEFAULT_TOP = "10";
+
     private ApiConfig() {
     }
 }

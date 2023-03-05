@@ -108,7 +108,7 @@ public class PostService implements IPostService {
         Post post = this.postRequestToPostMapper.apply(postRequest);
         this.logger.info(postRequest + " is mapped to " + post + " .");
 
-        this.postRepository.save(post);
+        post = this.postRepository.save(post);
         this.logger.info(post + " is created in database.");
 
         this.kafkaProducer.sendForUpsert(post);
@@ -128,7 +128,7 @@ public class PostService implements IPostService {
         post = this.postWithPostRequestToPostUpdater.apply(post, postRequest);
         this.logger.info(post + " is updated to " + post + " with " + postRequest + " .");
 
-        this.postRepository.save(post);
+        post = this.postRepository.save(post);
         this.logger.info(post + " is updated in database.");
 
         this.kafkaProducer.sendForUpsert(post);

@@ -8,18 +8,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tr.unvercanunlu.microservices.postservice.exception.PostNotFoundException;
 import tr.unvercanunlu.microservices.postservice.model.entity.Post;
+import tr.unvercanunlu.microservices.postservice.model.entity.PostHelper;
 import tr.unvercanunlu.microservices.postservice.model.request.PostRequest;
+import tr.unvercanunlu.microservices.postservice.model.request.PostRequestHelper;
 import tr.unvercanunlu.microservices.postservice.model.response.PostDto;
+import tr.unvercanunlu.microservices.postservice.model.response.PostDtoHelper;
+import tr.unvercanunlu.microservices.postservice.producer.impl.MessageProducer;
 import tr.unvercanunlu.microservices.postservice.repository.IPostRepository;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(value = MockitoExtension.class)
@@ -28,22 +31,21 @@ class PostServiceTest {
     @Mock
     private IPostRepository postRepository;
 
+    private final ArgumentCaptor<UUID> postIdCaptor = ArgumentCaptor.forClass(UUID.class);
+
     @InjectMocks
     private PostService postService;
+    private final ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+    @Mock
+    private MessageProducer kafkaProducer;
 
     @Test
-    void whenGetAllPosts_thenReturnListOfPosts() {
-        Post post = Post.builder()
-                .id(UUID.randomUUID())
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(ZonedDateTime.now())
-                .build();
+    void whenGetAllPosts_thenReturnListOfPostDtos() {
+        Post post = PostHelper.generate.get();
 
         List<Post> posts = List.of(post);
 
-        PostDto postDto = PostDto.builder()
+        PostDto expectedPostDto = PostDto.builder()
                 .id(post.getId())
                 .author(post.getAuthor())
                 .content(post.getContent())
@@ -51,7 +53,7 @@ class PostServiceTest {
                 .postDate(post.getPostDate().toLocalDateTime())
                 .build();
 
-        List<PostDto> expectedPostDtos = List.of(postDto);
+        List<PostDto> expectedPostDtos = List.of(expectedPostDto);
 
         when(this.postRepository.findAll()).thenReturn(posts);
 
@@ -62,33 +64,14 @@ class PostServiceTest {
         assertNotNull(actualPostDtos);
         assertEquals(expectedPostDtos.size(), actualPostDtos.size());
 
-        assertNotNull(actualPostDtos.get(0));
+        PostDto actualPostDto = actualPostDtos.get(0);
 
-        assertNotNull(actualPostDtos.get(0).getId());
-        assertEquals(postDto.getId(), actualPostDtos.get(0).getId());
-
-        assertNotNull(actualPostDtos.get(0).getContent());
-        assertEquals(postDto.getContent(), actualPostDtos.get(0).getContent());
-
-        assertNotNull(actualPostDtos.get(0).getAuthor());
-        assertEquals(postDto.getAuthor(), actualPostDtos.get(0).getAuthor());
-
-        assertNotNull(actualPostDtos.get(0).getPostDate());
-        assertEquals(postDto.getPostDate(), actualPostDtos.get(0).getPostDate());
-
-        assertNotNull(actualPostDtos.get(0).getViewCount());
-        assertEquals(postDto.getViewCount(), actualPostDtos.get(0).getViewCount());
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
     }
 
     @Test
     void givenPostId_whenPostExists_whenGetPost_thenReturnPostDto() {
-        Post post = Post.builder()
-                .id(UUID.randomUUID())
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(ZonedDateTime.now())
-                .build();
+        Post post = PostHelper.generate.get();
 
         PostDto expectedPostDto = PostDto.builder()
                 .id(post.getId())
@@ -102,29 +85,11 @@ class PostServiceTest {
 
         PostDto actualPostDto = this.postService.getPost(post.getId());
 
-        ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
-        verify(this.postRepository, times(1)).findById(idCaptor.capture());
+        verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 
-        assertNotNull(idCaptor.getValue());
-        assertEquals(post.getId(), idCaptor.getValue());
-
-        assertNotNull(actualPostDto);
-
-        assertNotNull(actualPostDto.getId());
-        assertEquals(expectedPostDto.getId(), actualPostDto.getId());
-
-        assertNotNull(actualPostDto.getContent());
-        assertEquals(expectedPostDto.getContent(), actualPostDto.getContent());
-
-        assertNotNull(actualPostDto.getAuthor());
-        assertEquals(expectedPostDto.getAuthor(), actualPostDto.getAuthor());
-
-        assertNotNull(actualPostDto.getPostDate());
-        assertEquals(expectedPostDto.getPostDate(), actualPostDto.getPostDate());
-
-        assertNotNull(actualPostDto.getViewCount());
-        assertEquals(expectedPostDto.getViewCount(), actualPostDto.getViewCount());
+        PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
     }
 
     @Test
@@ -135,36 +100,31 @@ class PostServiceTest {
 
         try {
             this.postService.getPost(postId);
-        } catch (PostNotFoundException e) {
-            ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
 
-            verify(this.postRepository, times(1)).findById(idCaptor.capture());
+        } catch (PostNotFoundException ex) {
+            verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 
-            assertNotNull(idCaptor.getValue());
-            assertEquals(idCaptor.getValue(), postId);
+            PostHelper.comparePostId.accept(postId, this.postIdCaptor.getValue());
         }
     }
 
     @Test
     void givenPostId_whenDeletePost() {
-        Post post = Post.builder()
-                .id(UUID.randomUUID())
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(ZonedDateTime.now())
-                .build();
+        Post post = PostHelper.generate.get();
 
         when(this.postRepository.checkExistsById(post.getId())).thenReturn(true);
 
+        doNothing().when(this.kafkaProducer).sendForDelete(post.getId());
+
         this.postService.deletePost(post.getId());
 
-        ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(this.postRepository, times(1)).checkExistsById(this.postIdCaptor.capture());
 
-        verify(this.postRepository, times(1)).checkExistsById(idCaptor.capture());
+        PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
 
-        assertNotNull(idCaptor.getValue());
-        assertEquals(post.getId(), idCaptor.getValue());
+        verify(this.kafkaProducer, times(1)).sendForDelete(this.postIdCaptor.capture());
+
+        PostHelper.comparePostId.accept(post.getId(), this.postIdCaptor.getValue());
     }
 
     @Test
@@ -175,77 +135,27 @@ class PostServiceTest {
 
         try {
             this.postService.deletePost(postId);
-        } catch (PostNotFoundException e) {
+
+        } catch (PostNotFoundException ex) {
             verify(this.postRepository, times(0)).deleteById(any(UUID.class));
 
-            ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+            verify(this.kafkaProducer, times(0)).sendForDelete(any(UUID.class));
 
-            verify(this.postRepository, times(1)).checkExistsById(idCaptor.capture());
+            verify(this.postRepository, times(1)).checkExistsById(this.postIdCaptor.capture());
 
-            assertNotNull(idCaptor.getValue());
-            assertEquals(idCaptor.getValue(), postId);
+            PostHelper.comparePostId.accept(postId, this.postIdCaptor.getValue());
         }
     }
 
     @Test
     void givenPostRequest_whenCreatePost_thenReturnPostDto() {
-        PostRequest postRequest = PostRequest.builder()
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(LocalDateTime.now())
-                .build();
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
-        Post post = Post.builder()
+        Post postBeforeSave = Post.builder()
                 .author(postRequest.getAuthor())
                 .content(postRequest.getContent())
                 .viewCount(postRequest.getViewCount())
                 .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
-                .build();
-
-        UUID postId = UUID.randomUUID();
-
-        PostDto expectedPostDto = PostDto.builder()
-                .id(postId)
-                .author(post.getAuthor())
-                .content(post.getContent())
-                .viewCount(post.getViewCount())
-                .postDate(post.getPostDate().toLocalDateTime())
-                .build();
-
-        when(this.postRepository.save(any(Post.class))).thenReturn(post);
-
-        PostDto actualPostDto = this.postService.createPost(postRequest);
-
-        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-
-        verify(this.postRepository, times(1)).save(postCaptor.capture());
-
-        assertNotNull(postCaptor.getValue());
-
-        assertNull(postCaptor.getValue().getId());
-        assertEquals(post.getId(), postCaptor.getValue().getId());
-
-        assertNotNull(postCaptor.getValue().getContent());
-        assertEquals(expectedPostDto.getContent(), actualPostDto.getContent());
-
-        assertNotNull(postCaptor.getValue().getAuthor());
-        assertEquals(expectedPostDto.getAuthor(), actualPostDto.getAuthor());
-
-        assertNotNull(actualPostDto.getPostDate());
-        assertEquals(expectedPostDto.getPostDate(), actualPostDto.getPostDate());
-
-        assertNotNull(actualPostDto.getViewCount());
-        assertEquals(expectedPostDto.getViewCount(), actualPostDto.getViewCount());
-    }
-
-    @Test
-    void givenPostRequestAndPostId_whenPostExists_whenUpdatePost_thenReturnPostDto() {
-        PostRequest postRequest = PostRequest.builder()
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(LocalDateTime.now())
                 .build();
 
         Post post = Post.builder()
@@ -266,47 +176,55 @@ class PostServiceTest {
 
         when(this.postRepository.save(any(Post.class))).thenReturn(post);
 
-        when(this.postRepository.findById(post.getId())).thenReturn(Optional.of(post));
+        PostDto actualPostDto = this.postService.createPost(postRequest);
 
-        PostDto actualPostDto = this.postService.updatePost(post.getId(), postRequest);
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
-        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
+        verify(this.postRepository, times(1)).save(this.postCaptor.capture());
 
-        verify(this.postRepository, times(1)).save(postCaptor.capture());
+        PostHelper.compare.accept(postBeforeSave, this.postCaptor.getValue());
+    }
 
-        ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+    @Test
+    void givenPostRequestAndPostId_whenPostExists_whenUpdatePost_thenReturnPostDto() {
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
-        verify(this.postRepository, times(1)).findById(idCaptor.capture());
+        Post expectedPost = Post.builder()
+                .id(UUID.randomUUID())
+                .author(postRequest.getAuthor())
+                .content(postRequest.getContent())
+                .viewCount(postRequest.getViewCount())
+                .postDate(postRequest.getPostDate().atZone(ZoneId.systemDefault()))
+                .build();
 
-        assertNotNull(idCaptor.getValue());
-        assertEquals(post.getId(), idCaptor.getValue());
+        PostDto expectedPostDto = PostDto.builder()
+                .id(expectedPost.getId())
+                .author(expectedPost.getAuthor())
+                .content(expectedPost.getContent())
+                .viewCount(expectedPost.getViewCount())
+                .postDate(expectedPost.getPostDate().toLocalDateTime())
+                .build();
 
-        assertNotNull(postCaptor.getValue());
+        when(this.postRepository.save(any(Post.class))).thenReturn(expectedPost);
 
-        assertNotNull(postCaptor.getValue().getId());
-        assertEquals(post.getId(), postCaptor.getValue().getId());
+        when(this.postRepository.findById(expectedPost.getId())).thenReturn(Optional.of(expectedPost));
 
-        assertNotNull(postCaptor.getValue().getContent());
-        assertEquals(expectedPostDto.getContent(), actualPostDto.getContent());
+        PostDto actualPostDto = this.postService.updatePost(expectedPost.getId(), postRequest);
 
-        assertNotNull(postCaptor.getValue().getAuthor());
-        assertEquals(expectedPostDto.getAuthor(), actualPostDto.getAuthor());
+        PostDtoHelper.compare.accept(expectedPostDto, actualPostDto);
 
-        assertNotNull(actualPostDto.getPostDate());
-        assertEquals(expectedPostDto.getPostDate(), actualPostDto.getPostDate());
+        verify(this.postRepository, times(1)).save(this.postCaptor.capture());
 
-        assertNotNull(actualPostDto.getViewCount());
-        assertEquals(expectedPostDto.getViewCount(), actualPostDto.getViewCount());
+        PostHelper.compare.accept(expectedPost, this.postCaptor.getValue());
+
+        verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
+
+        PostHelper.comparePostId.accept(expectedPost.getId(), this.postIdCaptor.getValue());
     }
 
     @Test
     void givenPostRequestAndPostId_whenPostDoesNotExist_whenUpdatePost_thenThrowPostNotFoundException() {
-        PostRequest postRequest = PostRequest.builder()
-                .author("author-1")
-                .content("content-1")
-                .viewCount(1L)
-                .postDate(LocalDateTime.now())
-                .build();
+        PostRequest postRequest = PostRequestHelper.generate.get();
 
         UUID postId = UUID.randomUUID();
 
@@ -314,15 +232,13 @@ class PostServiceTest {
 
         try {
             this.postService.updatePost(postId, postRequest);
-        } catch (PostNotFoundException e) {
+
+        } catch (PostNotFoundException ex) {
             verify(this.postRepository, times(0)).save(any(Post.class));
 
-            ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+            verify(this.postRepository, times(1)).findById(this.postIdCaptor.capture());
 
-            verify(this.postRepository, times(1)).findById(idCaptor.capture());
-
-            assertNotNull(idCaptor.getValue());
-            assertEquals(idCaptor.getValue(), postId);
+            PostHelper.comparePostId.accept(postId, this.postIdCaptor.getValue());
         }
     }
 }

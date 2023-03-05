@@ -29,4 +29,21 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(errorMap);
     }
+
+    @ExceptionHandler(value = OrderNotSuitableException.class)
+    public ResponseEntity<Map<String, Object>> handleOrderNotSuitableException(OrderNotSuitableException exception) {
+        Map<String, Object> errorMap = new HashMap<>();
+        errorMap.put("reason", exception.getMessage());
+
+        Optional.ofNullable(exception.getOrder()).ifPresent(order -> {
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("order", order);
+            errorMap.put("data", dataMap);
+        });
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorMap);
+    }
 }

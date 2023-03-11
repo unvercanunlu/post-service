@@ -32,7 +32,7 @@ class PostRepositoryTest {
     void givenPostId_whenPostDoesExists_whenCheckPostExistsById_thenReturnTrue() {
         Post post = PostHelper.generate.get();
 
-        post = this.entityManager.persist(post);
+        post = this.entityManager.merge(post);
 
         Boolean postExists = this.postRepository.checkExistsById(post.getId());
 
@@ -55,12 +55,12 @@ class PostRepositoryTest {
         Post post1 = PostHelper.generate.get();
         post1.setViewCount(1L);
 
-        post1 = this.entityManager.persist(post1);
+        post1 = this.entityManager.merge(post1);
 
         Post post2 = PostHelper.generate.get();
         post2.setViewCount(2L);
 
-        post2 = this.entityManager.persist(post2);
+        post2 = this.entityManager.merge(post2);
 
         List<Post> expectedPosts = List.of(post1, post2);
 
@@ -81,12 +81,12 @@ class PostRepositoryTest {
         Post post1 = PostHelper.generate.get();
         post1.setPostDate(LocalDateTime.now().minusDays(2));
 
-        post1 = this.entityManager.persist(post1);
+        post1 = this.entityManager.merge(post1);
 
         Post post2 = PostHelper.generate.get();
         post2.setPostDate(LocalDateTime.now().minusDays(1));
 
-        post2 = this.entityManager.persist(post2);
+        post2 = this.entityManager.merge(post2);
 
         List<Post> expectedPosts = List.of(post1, post2);
 
